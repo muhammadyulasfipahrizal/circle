@@ -1,0 +1,40 @@
+version: 2.1
+
+jobs:
+  build-and-push:
+    machine:
+      image: ubuntu-2204:current
+
+    resource_class: pahri/devops
+
+    steps:
+      - checkout
+      - run:
+          name: Login Harbor
+          command: |
+            echo "$HARBOR_PASSWORD" | docker login \
+              $HARBOR_REGISTRY \
+              -u "$HARBOR_USERNAME" \
+              --password-stdin
+
+      - run:
+          name: Build Image
+          command: |
+            IMAGE=$HARBOR_REGISTRY/production/pahri-k8s
+
+            docker build \
+              -t $IMAGE:$CIRCLE_SHA1 \
+              .
+
+      - run:
+          name: Push Image
+          command: |
+            IMAGE=$HARBOR_REGISTRY/production/pahri-k8s
+
+            docker push \
+              $IMAGE:$CIRCLE_SHA1
+
+workflows:
+  build:
+    jobs:
+      - build-and-push
